@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Search</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            display: inline-block;
+            margin: 10px 0;
+        }
+        input, select, button {
+            margin: 5px;
+            padding: 5px;
+        }
+        img {
+            max-width: 200px;
+            margin: 10px;
+        }
+        .results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Search</h1>
+
+    <!-- Search Form -->
+    <form id="query-form" enctype="multipart/form-data">
+        <label for="image_query">Image query:</label>
+        <input type="file" id="image_query" name="image_query">
+        <br>
+
+        <label for="text_query">Text query:</label>
+        <input type="text" id="text_query" name="text_query">
+        <br>
+
+        <label for="lambda">Hybrid Query Weight (λ):</label>
+        <input type="number" id="lambda" name="lambda" step="0.1" min="0" max="1" value="0.5"><br>
+        <br>
+
+        <label for="query_type">Select query type:</label>
+        <select id="query_type" name="query_type">
+            <option value="text">Text query</option>
+            <option value="image">Image query</option>
+            <option value="combined">Hybrid query</option>
+        </select>
+        <br>
+
+        <button type="submit">Search</button>
+    </form>
+
+    <hr>
+
+    <!-- Results Section -->
+    <h2>Top Search Results</h2>
+    <div id="results" class="results"></div>
+
+    <script>
+        $(document).ready(function () {
+            // Show or hide form fields based on query type
+            $("#query_type").change(function () {
+                const queryType = $(this).val();
+                if (queryType === "text") {
+                    $("#text_query").show();
+                    $("#image_query").hide();
+                    $("#weight").hide();
+                } else if (queryType === "image") {
+                    $("#text_query").hide();
+                    $("#image_query").show();
+                    $("#weight").hide();
+                } else if (queryType === "combined") {
+                    $("#text_query").show();
+                    $("#image_query").show();
+                    $("#weight").show();
+                }
+            }).trigger("change");
+
+            // Submit form and fetch results
+            $("#query-form").submit(function (e) {
+                e.preventDefault();
+
+                const formData = new FormData(this);
+
+                $.ajax({
+                    url: "/search",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        $("#results").empty();
+                        response.forEach(result => {
+                            $("#results").append(`
+                                <div>
+                                    <img src="/static/images/${result.file_name}" alt="${result.file_name}">
+                                    <p>Similarity: ${result.similarity.toFixed(3)}</p>
+                                </div>
+                            `);
+                        });
+                    },
+                    error: function (err) {
+                        console.error(err);
+                        alert("An error occurred while processing your query.");
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
